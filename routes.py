@@ -158,12 +158,16 @@ def resolve_anomaly(anomaly_id):
 @app.route('/video/<path:filename>')
 def serve_video(filename):
     """Serve video files"""
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    response = send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    response.headers['Accept-Ranges'] = 'bytes'
+    return response
 
 @app.route('/processed/<path:filename>')
 def serve_processed_video(filename):
     """Serve processed video files with annotations"""
-    return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
+    response = send_from_directory(app.config['PROCESSED_FOLDER'], filename)
+    response.headers['Accept-Ranges'] = 'bytes'
+    return response
 
 @app.route('/api/analysis/<int:analysis_id>', methods=['DELETE'])
 def delete_analysis(analysis_id):

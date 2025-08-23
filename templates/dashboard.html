@@ -154,11 +154,11 @@
                                                         <i class="fas fa-eye"></i>
                                                     </a>
                                                     {% if analysis.processed_video_path %}
-                                                        <a href="{{ url_for('serve_processed_video', filename=analysis.processed_video_path.split('/')[-1]) }}" 
-                                                           class="btn btn-sm btn-outline-success" 
-                                                           title="Download Processed Video">
-                                                            <i class="fas fa-download"></i>
-                                                        </a>
+                                                        <button class="btn btn-sm btn-outline-success" 
+                                                                onclick="playVideo({{ analysis.id }}, '{{ url_for('serve_processed_video', filename=analysis.processed_video_path.split('/')[-1]) }}', 'Processed: {{ analysis.filename }}')"
+                                                                title="Play Processed Video">
+                                                            <i class="fas fa-play"></i>
+                                                        </button>
                                                     {% endif %}
                                                 {% elif analysis.processing_status == 'processing' %}
                                                     <button class="btn btn-sm btn-outline-info" 
@@ -180,10 +180,17 @@
                                                 </button>
                                                 <ul class="dropdown-menu">
                                                     <li>
-                                                        <a class="dropdown-item" href="{{ url_for('serve_video', filename=analysis.filename) }}">
-                                                            <i class="fas fa-play me-2"></i>View Original
+                                                        <a class="dropdown-item" href="#" onclick="playVideo({{ analysis.id }}, '{{ url_for('serve_video', filename=analysis.filename) }}', 'Original: {{ analysis.filename }}')">
+                                                            <i class="fas fa-play me-2"></i>Play Original
                                                         </a>
                                                     </li>
+                                                    {% if analysis.processed_video_path %}
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('serve_processed_video', filename=analysis.processed_video_path.split('/')[-1]) }}" download>
+                                                            <i class="fas fa-download me-2"></i>Download Processed
+                                                        </a>
+                                                    </li>
+                                                    {% endif %}
                                                     <li><hr class="dropdown-divider"></li>
                                                     <li>
                                                         <a class="dropdown-item text-danger" href="#" onclick="deleteAnalysis({{ analysis.id }})">
@@ -212,10 +219,132 @@
         </div>
     </div>
 </div>
+<!-- Video Player Modal -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="videoModalTitle">
+                    <i class="fas fa-play me-2"></i>Video Playback
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="ratio ratio-16x9">
+                    <video id="modalVideo" controls class="rounded" preload="metadata">
+                        <source id="modalVideoSource" src="" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary" onclick="togglePlayback()">
+                                <i class="fas fa-play-circle me-1"></i>Play/Pause
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="toggleMute()">
+                                <i class="fas fa-volume-up me-1"></i>Mute/Unmute
+                            </button>
+                            <button class="btn btn-outline-info" onclick="toggleFullscreen()">
+                                <i class="fas fa-expand me-1"></i>Fullscreen
+                            </button>
+                        </div>
+                        <div class="text-muted small">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <span id="videoInfo">Loading video info...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
+// Video playback functionality
+function playVideo(analysisId, videoUrl, title) {
+    const modal = new bootstrap.Modal(document.getElementById('videoModal'));
+    const videoElement = document.getElementById('modalVideo');
+    const videoSource = document.getElementById('modalVideoSource');
+    const modalTitle = document.getElementById('videoModalTitle');
+    const videoInfo = document.getElementById('videoInfo');
+    
+    // Set video source and title
+    modalTitle.innerHTML = `<i class="fas fa-play me-2"></i>${title}`;
+    videoSource.src = videoUrl;
+    videoElement.load(); // Reload the video element
+    
+    // Show loading state
+    videoInfo.textContent = 'Loading video...';
+    
+    // Update video info when metadata loads
+    videoElement.addEventListener('loadedmetadata', function() {
+        const duration = Math.round(videoElement.duration);
+        const minutes = Math.floor(duration / 60);
+        const seconds = duration % 60;
+        videoInfo.textContent = `Duration: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }, { once: true });
+    
+    // Handle loading errors
+    videoElement.addEventListener('error', function(e) {
+        videoInfo.textContent = 'Error loading video';
+        console.error('Video loading error:', e);
+    }, { once: true });
+    
+    // Show modal
+    modal.show();
+    
+    // Auto-play when modal is shown
+    document.getElementById('videoModal').addEventListener('shown.bs.modal', function() {
+        videoElement.play().catch(e => {
+            console.log('Auto-play prevented by browser:', e);
+        });
+    }, { once: true });
+    
+    // Pause video when modal is hidden
+    document.getElementById('videoModal').addEventListener('hide.bs.modal', function() {
+        videoElement.pause();
+        videoElement.currentTime = 0;
+    });
+}
+
+// Video control functions
+function togglePlayback() {
+    const video = document.getElementById('modalVideo');
+    if (video.paused) {
+        video.play();
+    } else {
+        video.pause();
+    }
+}
+
+function toggleMute() {
+    const video = document.getElementById('modalVideo');
+    video.muted = !video.muted;
+    
+    // Update button icon
+    const button = event.target.closest('button');
+    const icon = button.querySelector('i');
+    if (video.muted) {
+        icon.className = 'fas fa-volume-mute me-1';
+    } else {
+        icon.className = 'fas fa-volume-up me-1';
+    }
+}
+
+function toggleFullscreen() {
+    const video = document.getElementById('modalVideo');
+    if (video.requestFullscreen) {
+        video.requestFullscreen();
+    } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+    } else if (video.msRequestFullscreen) {
+        video.msRequestFullscreen();
+    }
+}
+
 // Auto-refresh processing videos
 function refreshProcessingVideos() {
     const processingRows = document.querySelectorAll('tr[data-analysis-id]');
