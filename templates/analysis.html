@@ -480,8 +480,30 @@ function markAllResolved() {
 
 function deleteAnalysis() {
     if (confirm('Delete this analysis? This action cannot be undone.')) {
-        // Implementation would go here
-        window.location.href = '/dashboard';
+        const analysisId = {{ analysis.id }};
+        
+        fetch(`/api/analysis/${analysisId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Analysis deleted successfully', 'success');
+                // Redirect to dashboard after a short delay
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
+            } else {
+                showToast('Error deleting analysis: ' + (data.error || 'Unknown error'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting analysis:', error);
+            showToast('Error deleting analysis', 'error');
+        });
     }
 }
 

@@ -1,5 +1,6 @@
 import os
 import json
+import logging
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from app import app, db
@@ -163,6 +164,45 @@ def serve_video(filename):
 def serve_processed_video(filename):
     """Serve processed video files with annotations"""
     return send_from_directory(app.config['PROCESSED_FOLDER'], filename)
+
+@app.route('/api/analysis/<int:analysis_id>', methods=['DELETE'])
+def delete_analysis(analysis_id):
+    """API endpoint to delete a video analysis and all related data"""
+    try:
+        analysis = VideoAnalysis.query.get_or_404(analysis_id)
+        
+        # Delete related alerts first (they reference anomalies)
+        Alert.query.join(Anomaly).filter(Anomaly.video_analysis_id == analysis_id).delete(synchronize_session=False)
+        
+        # Delete anomalies
+        Anomaly.query.filter_by(video_analysis_id=analysis_id).delete()
+        
+        # Delete detected objects
+        DetectedObject.query.filter_by(video_analysis_id=analysis_id).delete()
+        
+        # Delete video files from filesystem
+        if analysis.file_path and os.path.exists(analysis.file_path):
+            try:
+                os.remove(analysis.file_path)
+            except OSError:
+                pass  # File might already be deleted
+        
+        if analysis.processed_video_path and os.path.exists(analysis.processed_video_path):
+            try:
+                os.remove(analysis.processed_video_path)
+            except OSError:
+                pass  # File might already be deleted
+        
+        # Delete the analysis record
+        db.session.delete(analysis)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Analysis deleted successfully'})
+        
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Error deleting analysis {analysis_id}: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/statistics')
 def get_statistics():
