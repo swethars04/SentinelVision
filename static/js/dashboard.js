@@ -268,20 +268,25 @@ class SurveillanceDashboard {
             .then(stats => {
                 const ctx = canvas.getContext('2d');
                 
+                // Use real daily data if available, fallback to generated data
+                const labels = stats.daily_labels || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                const anomalyData = stats.daily_anomalies || this.generateWeeklyData(stats.total_anomalies || 0);
+                const videoData = stats.daily_videos || this.generateWeeklyData(stats.total_videos || 0);
+                
                 this.charts.analytics = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        labels: labels,
                         datasets: [{
                             label: 'Anomalies Detected',
-                            data: this.generateWeeklyData(stats.total_anomalies),
+                            data: anomalyData,
                             borderColor: 'rgb(255, 99, 132)',
                             backgroundColor: 'rgba(255, 99, 132, 0.1)',
                             tension: 0.1,
                             fill: true
                         }, {
                             label: 'Videos Processed',
-                            data: this.generateWeeklyData(stats.total_videos),
+                            data: videoData,
                             borderColor: 'rgb(54, 162, 235)',
                             backgroundColor: 'rgba(54, 162, 235, 0.1)',
                             tension: 0.1,
@@ -301,16 +306,37 @@ class SurveillanceDashboard {
                             tooltip: {
                                 mode: 'index',
                                 intersect: false,
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return 'Day: ' + tooltipItems[0].label;
+                                    },
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y;
+                                    }
+                                }
                             }
                         },
                         scales: {
                             x: {
+                                title: {
+                                    display: true,
+                                    text: 'Days (Last 7 Days)',
+                                    color: 'rgb(255, 255, 255)'
+                                },
                                 ticks: { color: 'rgb(255, 255, 255)' },
                                 grid: { color: 'rgba(255, 255, 255, 0.1)' }
                             },
                             y: {
+                                title: {
+                                    display: true,
+                                    text: 'Count',
+                                    color: 'rgb(255, 255, 255)'
+                                },
                                 beginAtZero: true,
-                                ticks: { color: 'rgb(255, 255, 255)' },
+                                ticks: { 
+                                    color: 'rgb(255, 255, 255)',
+                                    stepSize: 1  // Show whole numbers only
+                                },
                                 grid: { color: 'rgba(255, 255, 255, 0.1)' }
                             }
                         },
@@ -324,7 +350,38 @@ class SurveillanceDashboard {
             })
             .catch(error => {
                 console.error('Error loading analytics data:', error);
+                // Show fallback chart with empty data
+                this.showFallbackChart(canvas);
             });
+    }
+    
+    showFallbackChart(canvas) {
+        const ctx = canvas.getContext('2d');
+        this.charts.analytics = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'No data available',
+                    data: [0, 0, 0, 0, 0, 0, 0],
+                    borderColor: 'rgb(108, 117, 125)',
+                    backgroundColor: 'rgba(108, 117, 125, 0.1)',
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: { color: 'rgb(255, 255, 255)' }
+                    }
+                },
+                scales: {
+                    x: { ticks: { color: 'rgb(255, 255, 255)' } },
+                    y: { ticks: { color: 'rgb(255, 255, 255)' } }
+                }
+            }
+        });
     }
     
     initAnomalyChart(canvas) {

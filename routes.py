@@ -211,6 +211,10 @@ def delete_analysis(analysis_id):
 @app.route('/api/statistics')
 def get_statistics():
     """API endpoint for dashboard statistics"""
+    from sqlalchemy import func, desc
+    from datetime import datetime, timedelta
+    
+    # Basic stats
     stats = {
         'total_videos': VideoAnalysis.query.count(),
         'processing_videos': VideoAnalysis.query.filter_by(processing_status='processing').count(),
@@ -224,7 +228,6 @@ def get_statistics():
     }
     
     # Get anomaly type distribution
-    from sqlalchemy import func
     anomaly_counts = db.session.query(
         Anomaly.anomaly_type, 
         func.count(Anomaly.id).label('count')
@@ -232,5 +235,35 @@ def get_statistics():
     
     for anomaly_type, count in anomaly_counts:
         stats['anomaly_types'][anomaly_type] = count
+    
+    # Get daily data for the last 7 days
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=6)  # Last 7 days including today
+    
+    # Initialize daily data
+    daily_videos = []
+    daily_anomalies = []
+    daily_labels = []
+    
+    for i in range(7):
+        current_date = start_date + timedelta(days=i)
+        daily_labels.append(current_date.strftime('%a'))  # Mon, Tue, etc.
+        
+        # Count videos uploaded on this day
+        video_count = VideoAnalysis.query.filter(
+            func.date(VideoAnalysis.upload_time) == current_date.date()
+        ).count()
+        daily_videos.append(video_count)
+        
+        # Count anomalies detected on this day
+        anomaly_count = Anomaly.query.filter(
+            func.date(Anomaly.detected_time) == current_date.date()
+        ).count()
+        daily_anomalies.append(anomaly_count)
+    
+    # Add daily data to stats
+    stats['daily_videos'] = daily_videos
+    stats['daily_anomalies'] = daily_anomalies
+    stats['daily_labels'] = daily_labels
     
     return jsonify(stats)
