@@ -171,8 +171,12 @@ def delete_analysis(analysis_id):
     try:
         analysis = VideoAnalysis.query.get_or_404(analysis_id)
         
-        # Delete related alerts first (they reference anomalies)
-        Alert.query.join(Anomaly).filter(Anomaly.video_analysis_id == analysis_id).delete(synchronize_session=False)
+        # First, get all anomaly IDs for this analysis
+        anomaly_ids = [anomaly.id for anomaly in Anomaly.query.filter_by(video_analysis_id=analysis_id).all()]
+        
+        # Delete related alerts using the anomaly IDs
+        if anomaly_ids:
+            Alert.query.filter(Alert.anomaly_id.in_(anomaly_ids)).delete(synchronize_session=False)
         
         # Delete anomalies
         Anomaly.query.filter_by(video_analysis_id=analysis_id).delete()
