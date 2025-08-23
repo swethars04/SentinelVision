@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h2 mb-3">
+            <i class="fas fa-tachometer-alt me-2"></i>Surveillance Dashboard
+        </h1>
+        <p class="text-muted">Monitor and analyze video feeds for suspicious activities and behavioral anomalies.</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary">
+            <div class="card-body text-center">
+                <i class="fas fa-video fa-2x mb-2"></i>
+                <h3 class="mb-1">{{ stats.total_videos }}</h3>
+                <p class="mb-0">Total Videos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning">
+            <div class="card-body text-center">
+                <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                <h3 class="mb-1">{{ stats.total_anomalies }}</h3>
+                <p class="mb-0">Anomalies Detected</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-danger">
+            <div class="card-body text-center">
+                <i class="fas fa-bell fa-2x mb-2"></i>
+                <h3 class="mb-1">{{ stats.active_alerts }}</h3>
+                <p class="mb-0">Active Alerts</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info">
+            <div class="card-body text-center">
+                <i class="fas fa-eye fa-2x mb-2"></i>
+                <h3 class="mb-1">{{ stats.unresolved_anomalies }}</h3>
+                <p class="mb-0">Unresolved</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-rocket me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <a href="{{ url_for('upload_page') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-upload me-2"></i>Upload New Video
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary w-100">
+                            <i class="fas fa-list me-2"></i>View All Analyses
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <button class="btn btn-info w-100" onclick="refreshAlerts()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh Alerts
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Analyses and Alerts -->
+<div class="row">
+    <!-- Recent Video Analyses -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-video me-2"></i>Recent Analyses
+                </h5>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_analyses %}
+                    <div class="list-group list-group-flush">
+                        {% for analysis in recent_analyses %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ analysis.filename }}</h6>
+                                    <small class="text-muted">
+                                        {{ analysis.upload_time.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                    <br>
+                                    <span class="badge bg-{{ 'success' if analysis.processing_status == 'completed' else 'warning' if analysis.processing_status == 'processing' else 'danger' if analysis.processing_status == 'failed' else 'secondary' }}">
+                                        {{ analysis.processing_status.title() }}
+                                    </span>
+                                </div>
+                                <div class="text-end">
+                                    {% if analysis.processing_status == 'completed' %}
+                                        <small class="text-muted d-block">
+                                            {{ analysis.total_anomalies or 0 }} anomalies
+                                        </small>
+                                        <a href="{{ url_for('analysis_detail', analysis_id=analysis.id) }}" class="btn btn-sm btn-outline-primary">
+                                            View Details
+                                        </a>
+                                    {% elif analysis.processing_status == 'processing' %}
+                                        <small class="text-muted d-block">Processing...</small>
+                                        <div class="progress" style="width: 100px; height: 6px;">
+                                            <div class="progress-bar" role="progressbar" style="width: 50%"></div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No video analyses yet.</p>
+                        <a href="{{ url_for('upload_page') }}" class="btn btn-primary">
+                            Upload Your First Video
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Alerts -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-bell me-2"></i>Recent Alerts
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="alerts-container">
+                    {% if recent_alerts %}
+                        <div class="list-group list-group-flush">
+                            {% for alert in recent_alerts[:5] %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">
+                                            <span class="badge bg-{{ 'danger' if alert.alert_level == 'danger' else 'warning' if alert.alert_level == 'warning' else 'info' }} me-2">
+                                                {{ alert.alert_level.upper() }}
+                                            </span>
+                                            {{ alert.message }}
+                                        </h6>
+                                        <small>{{ alert.created_time.strftime('%H:%M') }}</small>
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ alert.created_time.strftime('%Y-%m-%d') }}
+                                        {% if not alert.is_acknowledged %}
+                                            <span class="badge bg-warning ms-2">Unacknowledged</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No alerts generated yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Chart -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>System Analytics
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="analyticsChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Initialize analytics chart
+function initAnalyticsChart() {
+    const ctx = document.getElementById('analyticsChart').getContext('2d');
+    
+    // Sample data - in real implementation, this would come from the API
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Anomalies Detected',
+                data: [12, 19, 8, 15, 22, 13, 18],
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                tension: 0.1
+            }, {
+                label: 'Videos Processed',
+                data: [5, 8, 3, 6, 9, 5, 7],
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// Refresh alerts function
+function refreshAlerts() {
+    fetch('/api/alerts')
+        .then(response => response.json())
+        .then(alerts => {
+            updateAlertsDisplay(alerts.slice(0, 5));
+            updateAlertCounter(alerts.filter(alert => !alert.is_acknowledged).length);
+        })
+        .catch(error => console.error('Error refreshing alerts:', error));
+}
+
+// Update alerts display
+function updateAlertsDisplay(alerts) {
+    const container = document.getElementById('alerts-container');
+    
+    if (alerts.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-4">
+                <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                <p class="text-muted">No alerts generated yet.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const alertsHtml = alerts.map(alert => `
+        <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">
+                    <span class="badge bg-${alert.level === 'danger' ? 'danger' : alert.level === 'warning' ? 'warning' : 'info'} me-2">
+                        ${alert.level.toUpperCase()}
+                    </span>
+                    ${alert.message}
+                </h6>
+                <small>${new Date(alert.created_time).toLocaleTimeString()}</small>
+            </div>
+            <small class="text-muted">
+                ${new Date(alert.created_time).toLocaleDateString()}
+                ${!alert.is_acknowledged ? '<span class="badge bg-warning ms-2">Unacknowledged</span>' : ''}
+            </small>
+        </div>
+    `).join('');
+    
+    container.innerHTML = `<div class="list-group list-group-flush">${alertsHtml}</div>`;
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initAnalyticsChart();
+    refreshAlerts();
+    
+    // Auto-refresh alerts every 30 seconds
+    setInterval(refreshAlerts, 30000);
+});
+</script>
+{% endblock %}

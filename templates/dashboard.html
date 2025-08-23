@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Video Analyses{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="h2 mb-1">
+                    <i class="fas fa-list me-2"></i>Video Analyses
+                </h1>
+                <p class="text-muted">Manage and monitor all video processing tasks</p>
+            </div>
+            <a href="{{ url_for('upload_page') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Upload New Video
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filters and Search -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" placeholder="Search videos..." id="searchInput">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="processing">Processing</option>
+                            <option value="completed">Completed</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="sortBy">
+                            <option value="upload_time">Upload Time</option>
+                            <option value="filename">Filename</option>
+                            <option value="duration">Duration</option>
+                            <option value="anomalies">Anomalies Count</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" onclick="applyFilters()">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Video Analyses Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-video me-2"></i>Processed Videos ({{ analyses|length }})
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if analyses %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Video</th>
+                                    <th>Status</th>
+                                    <th>Upload Time</th>
+                                    <th>Duration</th>
+                                    <th>Detections</th>
+                                    <th>Anomalies</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="analysesTable">
+                                {% for analysis in analyses %}
+                                    <tr data-analysis-id="{{ analysis.id }}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-file-video fa-lg me-2 text-primary"></i>
+                                                <div>
+                                                    <div class="fw-bold">{{ analysis.filename }}</div>
+                                                    <small class="text-muted">
+                                                        {% if analysis.total_frames %}
+                                                            {{ analysis.total_frames }} frames
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if analysis.processing_status == 'completed' else 'warning' if analysis.processing_status == 'processing' else 'danger' if analysis.processing_status == 'failed' else 'secondary' }}">
+                                                {{ analysis.processing_status.title() }}
+                                            </span>
+                                            {% if analysis.processing_status == 'processing' %}
+                                                <div class="progress mt-1" style="height: 4px;">
+                                                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                                         role="progressbar" 
+                                                         style="width: {{ (analysis.processed_frames / analysis.total_frames * 100) if analysis.total_frames else 0 }}%">
+                                                    </div>
+                                                </div>
+                                                <small class="text-muted">
+                                                    {{ analysis.processed_frames or 0 }}/{{ analysis.total_frames or 0 }}
+                                                </small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>{{ analysis.upload_time.strftime('%Y-%m-%d') }}</div>
+                                            <small class="text-muted">{{ analysis.upload_time.strftime('%H:%M:%S') }}</small>
+                                        </td>
+                                        <td>
+                                            {% if analysis.duration %}
+                                                {{ "%.1f"|format(analysis.duration) }}s
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <i class="fas fa-user me-1"></i>{{ analysis.total_persons_detected or 0 }}
+                                            </div>
+                                            <small class="text-muted">
+                                                <i class="fas fa-cube me-1"></i>{{ analysis.total_objects_detected or 0 }} total
+                                            </small>
+                                        </td>
+                                        <td>
+                                            {% if analysis.total_anomalies %}
+                                                <span class="badge bg-warning">
+                                                    {{ analysis.total_anomalies }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">None</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                {% if analysis.processing_status == 'completed' %}
+                                                    <a href="{{ url_for('analysis_detail', analysis_id=analysis.id) }}" 
+                                                       class="btn btn-sm btn-outline-primary" 
+                                                       title="View Analysis">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    {% if analysis.processed_video_path %}
+                                                        <a href="{{ url_for('serve_processed_video', filename=analysis.processed_video_path.split('/')[-1]) }}" 
+                                                           class="btn btn-sm btn-outline-success" 
+                                                           title="Download Processed Video">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                {% elif analysis.processing_status == 'processing' %}
+                                                    <button class="btn btn-sm btn-outline-info" 
+                                                            onclick="refreshStatus({{ analysis.id }})"
+                                                            title="Refresh Status">
+                                                        <i class="fas fa-sync-alt"></i>
+                                                    </button>
+                                                {% elif analysis.processing_status == 'failed' %}
+                                                    <button class="btn btn-sm btn-outline-danger" 
+                                                            onclick="retryProcessing({{ analysis.id }})"
+                                                            title="Retry Processing">
+                                                        <i class="fas fa-redo"></i>
+                                                    </button>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                                        data-bs-toggle="dropdown" 
+                                                        title="More Actions">
+                                                    <i class="fas fa-ellipsis-v"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ url_for('serve_video', filename=analysis.filename) }}">
+                                                            <i class="fas fa-play me-2"></i>View Original
+                                                        </a>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item text-danger" href="#" onclick="deleteAnalysis({{ analysis.id }})">
+                                                            <i class="fas fa-trash me-2"></i>Delete
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-video fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">No Videos Uploaded Yet</h4>
+                        <p class="text-muted mb-4">Start by uploading a video for analysis</p>
+                        <a href="{{ url_for('upload_page') }}" class="btn btn-primary">
+                            <i class="fas fa-upload me-2"></i>Upload Your First Video
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Auto-refresh processing videos
+function refreshProcessingVideos() {
+    const processingRows = document.querySelectorAll('tr[data-analysis-id]');
+    
+    processingRows.forEach(row => {
+        const statusBadge = row.querySelector('.badge');
+        if (statusBadge && statusBadge.textContent.trim() === 'Processing') {
+            const analysisId = row.getAttribute('data-analysis-id');
+            refreshStatus(analysisId);
+        }
+    });
+}
+
+// Refresh individual analysis status
+function refreshStatus(analysisId) {
+    fetch(`/api/analysis/${analysisId}/status`)
+        .then(response => response.json())
+        .then(data => {
+            const row = document.querySelector(`tr[data-analysis-id="${analysisId}"]`);
+            if (row) {
+                updateRowStatus(row, data);
+            }
+        })
+        .catch(error => console.error('Error refreshing status:', error));
+}
+
+// Update row status
+function updateRowStatus(row, statusData) {
+    const statusBadge = row.querySelector('.badge');
+    const progressBar = row.querySelector('.progress-bar');
+    const progressText = row.querySelector('.progress').nextElementSibling;
+    
+    if (statusBadge) {
+        statusBadge.className = `badge bg-${getStatusColor(statusData.status)}`;
+        statusBadge.textContent = statusData.status.charAt(0).toUpperCase() + statusData.status.slice(1);
+    }
+    
+    if (progressBar && statusData.status === 'processing') {
+        progressBar.style.width = `${statusData.progress}%`;
+        if (progressText) {
+            progressText.textContent = `${statusData.processed_frames}/${statusData.total_frames}`;
+        }
+    } else if (statusData.status === 'completed') {
+        // Reload page to show updated results
+        setTimeout(() => location.reload(), 1000);
+    }
+}
+
+// Get status color
+function getStatusColor(status) {
+    switch (status) {
+        case 'completed': return 'success';
+        case 'processing': return 'warning';
+        case 'failed': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+// Apply filters
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+    const rows = document.querySelectorAll('#analysesTable tr');
+    
+    rows.forEach(row => {
+        const filename = row.querySelector('.fw-bold').textContent.toLowerCase();
+        const status = row.querySelector('.badge').textContent.toLowerCase();
+        
+        const matchesSearch = filename.includes(searchTerm);
+        const matchesStatus = !statusFilter || status.includes(statusFilter);
+        
+        row.style.display = matchesSearch && matchesStatus ? '' : 'none';
+    });
+}
+
+// Delete analysis
+function deleteAnalysis(analysisId) {
+    if (confirm('Are you sure you want to delete this analysis? This action cannot be undone.')) {
+        // Implementation would go here
+        console.log('Delete analysis', analysisId);
+    }
+}
+
+// Retry processing
+function retryProcessing(analysisId) {
+    if (confirm('Retry processing this video?')) {
+        // Implementation would go here
+        console.log('Retry processing', analysisId);
+    }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Set up search input event listener
+    document.getElementById('searchInput').addEventListener('input', applyFilters);
+    document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    
+    // Auto-refresh processing videos every 5 seconds
+    setInterval(refreshProcessingVideos, 5000);
+});
+</script>
+{% endblock %}
