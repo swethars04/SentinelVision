@@ -12,8 +12,7 @@
    - [Running the Project](#running-the-project)  
 5. [Usage](#usage)  
 6. [Future Development](#future-development)  
-7. [Contributing](#contributing)  
-8. [License](#license)  
+7. [License](#license)  
 
 ---
 
@@ -87,9 +86,6 @@ python main.py  # or python app.py
 
 Contributions are welcome! Please fork the repo, create a feature branch, and raise a Pull Request. For suggestions and bugs, open an Issue in the GitHub portal.
 
-### License
-
-[Specify license here, e.g., MIT, Apache 2.0, etc.]
 
 ### Next Steps
 
