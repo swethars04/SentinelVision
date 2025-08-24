@@ -54,7 +54,48 @@ The project is organized into modules that handle:
 - Required packages listed in `pyproject.toml` or `replit.md`
 
 ### Installation
-```bash
+
 git clone https://github.com/swethars04/SentinelVision.git
 cd SentinelVision
 pip install -r requirements.txt  # or use the appropriate dependency command
+Running the Project
+python main.py  # or python app.py
+# Then visit http://localhost:5000 (or your configured port)
+
+### Usage
+
+Load your video source (e.g., file, live camera feed)
+
+The system displays real-time anomalies on the dashboard
+
+Alerts include type of anomaly, timestamp, and captured frame
+
+Useful in settings like campuses, banks, or parking lots
+
+### Future Development
+
+Emergency Alerts: Automate calls to police or hospitals when a serious incident is detected.
+
+Public Alarms: Trigger audible sirens or public address systems to alert people nearby.
+
+IoT Integration: Link with devices like smart lights, emergency beacons, or drones for rapid response.
+
+Predictive AI: Advance from detection to predictive modeling of potential threats.
+
+Contributing
+
+Contributions are welcome! Please fork the repo, create a feature branch, and raise a Pull Request. For suggestions and bugs, open an Issue in the GitHub portal.
+
+### License
+
+[Specify license here, e.g., MIT, Apache 2.0, etc.]
+
+### Next Steps
+
+1. Copy this template into a new file named `README.md` at the root of your project.
+2. Adjust details—like running instructions, project structure, and license—to match your setup.
+3. Commit and push the new README:
+
+git add README.md
+git commit -m "Add project README"
+git push
