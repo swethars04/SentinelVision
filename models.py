@@ -1,4 +1,4 @@
-from app import db
+from extensions import db
 from datetime import datetime
 from sqlalchemy import Text, DateTime, Float, Integer, String, Boolean
 
@@ -20,6 +20,7 @@ class VideoAnalysis(db.Model):
     
     def __repr__(self):
         return f'<VideoAnalysis {self.filename}>'
+    pass
 
 class DetectedObject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -36,7 +37,7 @@ class DetectedObject(db.Model):
     
     def __repr__(self):
         return f'<DetectedObject {self.class_name} at frame {self.frame_number}>'
-
+    pass
 class Anomaly(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     video_analysis_id = db.Column(db.Integer, db.ForeignKey('video_analysis.id'), nullable=False)
@@ -57,7 +58,7 @@ class Anomaly(db.Model):
     
     def __repr__(self):
         return f'<Anomaly {self.anomaly_type} at {self.start_timestamp}s>'
-
+    pass
 class Alert(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     anomaly_id = db.Column(db.Integer, db.ForeignKey('anomaly.id'), nullable=False)
@@ -70,3 +71,4 @@ class Alert(db.Model):
     
     def __repr__(self):
         return f'<Alert {self.alert_level} - {self.message[:50]}>'
+    pass
