@@ -36,7 +36,7 @@ SentinelVision is designed to monitor real-time video feeds for unusual human be
 
 The project is organized into modules that handle:
 
-- **yolo_detector.py** – Object and person detection using YOLO  
+- **`yolo_detector.py`**  – Object and person detection using YOLO  
 - **`anomaly_detector.py`** – Behavioral analysis logic  
 - **`video_processor.py`** – Video frame capture and processing  
 - **`app.py` / `routes.py` / `main.py`** – Flask application for dashboard  
