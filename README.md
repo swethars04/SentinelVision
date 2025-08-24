@@ -40,7 +40,7 @@ The project is organized into modules that handle:
 - **`video_processor.py`** – Video frame capture and processing  
 - **`app.py` / `routes.py` / `main.py`** – Flask application for dashboard  
 - **`models.py`** – Machine learning models or data definitions  
-- **Static files & templates** – UI components (HTML, CSS, JS)  
+- **`Static files & templates`** – UI components (HTML, CSS, JS)  
 - **`extensions.py`** – Flask extensions setup  
 - **`pyproject.toml`** – Project dependencies and metadata
 
