@@ -58,9 +58,10 @@ The project is organized into modules that handle:
 git clone https://github.com/swethars04/SentinelVision.git
 cd SentinelVision
 pip install -r requirements.txt  # or use the appropriate dependency command
-Running the Project
+
+### Running the Project
 python main.py  # or python app.py
-# Then visit http://localhost:5000 (or your configured port)
+#Then visit http://localhost:5000 (or your configured port)
 
 ### Usage
 
@@ -82,7 +83,7 @@ IoT Integration: Link with devices like smart lights, emergency beacons, or dron
 
 Predictive AI: Advance from detection to predictive modeling of potential threats.
 
-Contributing
+### Contributing
 
 Contributions are welcome! Please fork the repo, create a feature branch, and raise a Pull Request. For suggestions and bugs, open an Issue in the GitHub portal.
 
