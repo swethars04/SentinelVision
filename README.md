@@ -62,7 +62,9 @@ pip install -r requirements.txt  # or use the appropriate dependency command
 python main.py  # or python app.py
 #Then visit http://localhost:5000 (or your configured port)
 
-### Usage
+---
+
+## Usage
 
 - Load your video source (e.g., file, live camera feed)
 
@@ -72,7 +74,9 @@ python main.py  # or python app.py
 
 - Useful in settings like campuses, banks, or parking lots
 
-### Future Development
+---
+
+## Future Development
 
 - **Emergency Alerts**: Automate calls to police or hospitals when a serious incident is detected.
 
@@ -82,12 +86,15 @@ python main.py  # or python app.py
 
 - **Predictive AI** : Advance from detection to predictive modeling of potential threats.
 
-### Contributing
+---
+
+## Contributing
 
 Contributions are welcome! Please fork the repo, create a feature branch, and raise a Pull Request. For suggestions and bugs, open an Issue in the GitHub portal.
 
+---
 
-### Next Steps
+## Next Steps
 
 1. Copy this template into a new file named `README.md` at the root of your project.
 2. Adjust details—like running instructions, project structure, and license—to match your setup.
