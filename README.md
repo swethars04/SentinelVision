@@ -65,23 +65,23 @@ python main.py  # or python app.py
 
 ### Usage
 
-Load your video source (e.g., file, live camera feed)
+- Load your video source (e.g., file, live camera feed)
 
-The system displays real-time anomalies on the dashboard
+- The system displays real-time anomalies on the dashboard
 
-Alerts include type of anomaly, timestamp, and captured frame
+- Alerts include type of anomaly, timestamp, and captured frame
 
-Useful in settings like campuses, banks, or parking lots
+- Useful in settings like campuses, banks, or parking lots
 
 ### Future Development
 
-Emergency Alerts: Automate calls to police or hospitals when a serious incident is detected.
+- **Emergency Alerts**: Automate calls to police or hospitals when a serious incident is detected.
 
-Public Alarms: Trigger audible sirens or public address systems to alert people nearby.
+- **Public Alarms**: Trigger audible sirens or public address systems to alert people nearby.
 
-IoT Integration: Link with devices like smart lights, emergency beacons, or drones for rapid response.
+- **IoT Integration**: Link with devices like smart lights, emergency beacons, or drones for rapid response.
 
-Predictive AI: Advance from detection to predictive modeling of potential threats.
+- **Predictive AI** : Advance from detection to predictive modeling of potential threats.
 
 ### Contributing
 
